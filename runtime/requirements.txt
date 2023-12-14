@@ -1,1 +1,7 @@
 redis
+matplotlib
+numpy
+pandas
+requests
+scikit-learn
+tqdm

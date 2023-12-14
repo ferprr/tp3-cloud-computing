@@ -1,32 +1,32 @@
 apiVersion: v1
 data:
-  pyfile: "from typing import Dict, Any\n\ndef findCPUMemandNetKeys(input: dict):\n
-    \   cpus_percent = []\n\n    for key in input.keys():\n        if \"cpu_percent\"
-    in key:\n            cpus_percent.append(input[key])\n\n        if \"net_io_counters_eth0-bytes_sent1\"
-    in key:\n            bytes_sent = input[key]\n\n        if \"net_io_counters_eth0-bytes_recv1\"
-    in key:\n            bytes_recv = input[key]\n\n        if \"virtual_memory-buffers\"
-    in key:\n            mem_buff = input[key]\n\n        if \"virtual_memory-cached\"
-    in key:\n            mem_cached = input[key]\n        \n        if \"virtual_memory-total\"
-    in key:\n            total_mem = input[key]\n\n    return cpus_percent, bytes_sent,
-    bytes_recv, mem_buff, mem_cached, total_mem\n\n\ndef handler(input: dict, context:
-    object) -> Dict[str, Any]:\n\n    cpus_percent, bytes_sent, bytes_recv, mem_buff,
-    mem_cached, total_mem = findCPUMemandNetKeys(input)\n    output = {}\n\n    if
-    getattr(context.env, \"counter\", None) is None:\n        context.env[\"counter\"]
+  pyfile: "from typing import Dict, Any\n\ndef find_cpu_mem_and_net_keys(input_data:
+    dict) -> Any:\n    cpus_percent = [input_data[key] for key in input_data if \"cpu_percent\"
+    in key]\n    bytes_sent = input_data.get(\"net_io_counters_eth0-bytes_sent1\",
+    0)\n    bytes_recv = input_data.get(\"net_io_counters_eth0-bytes_recv1\", 0)\n
+    \   mem_buff = input_data.get(\"virtual_memory-buffers\", 0)\n    mem_cached =
+    input_data.get(\"virtual_memory-cached\", 0)\n    total_mem = input_data.get(\"virtual_memory-total\",
+    0)\n\n    return cpus_percent, bytes_sent, bytes_recv, mem_buff, mem_cached, total_mem\n\ndef
+    update_cpu_average(cpus_percent: Any, context: object) -> Dict[str, Any]:\n    output
+    = {}\n    \n    if context.env.get(\"counter\") is None:\n        context.env[\"counter\"]
     = 1\n\n        for idx, cpu in enumerate(cpus_percent):\n            label_min
-    = \"mvg_avg_cpu_\" + str(idx) + \"_last_minute\"\n            context.env[label_min]
-    = cpu\n            output[label_min] = cpu\n\n        return output\n    \n    context.env[\"counter\"]
-    += 1\n    counter = context.env[\"counter\"]\n\n    n_min = 60\n\n    if counter
-    < 60:\n        n_min = counter\n\n\n    for idx, cpu in enumerate(cpus_percent):\n
-    \       label_min = \"mvg_avg_cpu_\" + str(idx) + \"_last_minute\"\n        last_mvg_avg_min
-    = context.env[label_min]\n        new_mvg_avg_min = (last_mvg_avg_min * (n_min
-    - 1) + cpu) / n_min\n        context.env[label_min] = new_mvg_avg_min\n        output[label_min]
-    = new_mvg_avg_min\n\n    total_bytes = bytes_sent + bytes_recv\n    outgoing_percent
-    = (bytes_sent / total_bytes) * 100 if total_bytes > 0 else 0\n    output[\"outgoing_traffic\"]
-    = outgoing_percent\n\n    cached_memory = mem_cached + mem_buff\n    caching_percentage
-    = (cached_memory / total_mem) * 100\n    output[\"memory_caching\"] = caching_percentage\n\n
-    \   return output"
+    = f\"mvg_avg_cpu_{idx}_last_minute\"\n            context.env[label_min] = cpu\n
+    \           output[label_min] = cpu\n\n        return output\n    \n    context.env[\"counter\"]
+    += 1\n    counter = context.env[\"counter\"]\n\n    n_min = min(60, counter)\n\n
+    \   for idx, cpu in enumerate(cpus_percent):\n        label_min = f\"mvg_avg_cpu_{idx}_last_minute\"\n
+    \       last_mvg_avg_min = context.env[label_min]\n        new_mvg_avg_min = (last_mvg_avg_min
+    * (n_min - 1) + cpu) / n_min\n        context.env[label_min] = new_mvg_avg_min\n
+    \       output[label_min] = new_mvg_avg_min\n\n    return output\n\ndef calculate_and_update_metrics(input_data:
+    dict, context: object) -> Dict[str, Any]:\n    cpus_percent, bytes_sent, bytes_recv,
+    mem_buff, mem_cached, total_mem = find_cpu_mem_and_net_keys(input_data)\n    output
+    = update_cpu_average(cpus_percent, context)\n\n    total_bytes = bytes_sent +
+    bytes_recv\n    outgoing_traffic = (bytes_sent / total_bytes) * 100 if total_bytes
+    > 0 else 0\n    output[\"outgoing_traffic\"] = outgoing_traffic\n\n    cached_memory
+    = mem_cached + mem_buff\n    memory_caching = (cached_memory / total_mem) * 100\n
+    \   output[\"memory_caching\"] = memory_caching\n\n    return output\n\ndef handler(input_data:
+    dict, context: object) -> Dict[str, Any]:\n    return calculate_and_update_metrics(input_data,
+    context)\n"
 kind: ConfigMap
 metadata:
   creationTimestamp: null
   name: pyfile
-  namespace: fernandapereira

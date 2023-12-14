@@ -42,12 +42,12 @@ def calculate_and_update_metrics(input_data: dict, context: object) -> Dict[str,
     output = update_cpu_average(cpus_percent, context)
 
     total_bytes = bytes_sent + bytes_recv
-    outgoing_percent = (bytes_sent / total_bytes) * 100 if total_bytes > 0 else 0
-    output["outgoing_traffic"] = outgoing_percent
+    outgoing_traffic = (bytes_sent / total_bytes) * 100 if total_bytes > 0 else 0
+    output["outgoing_traffic"] = outgoing_traffic
 
     cached_memory = mem_cached + mem_buff
-    caching_percentage = (cached_memory / total_mem) * 100
-    output["memory_caching"] = caching_percentage
+    memory_caching = (cached_memory / total_mem) * 100
+    output["memory_caching"] = memory_caching
 
     return output
 

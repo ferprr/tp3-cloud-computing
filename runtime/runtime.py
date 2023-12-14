@@ -5,7 +5,7 @@ import os
 import importlib
 import time
 
-user_module = importlib.util.find_spec('usermodule')
+user_module = importlib.util.find_spec('/opt/usermodule.py')
 
 if not user_module:
     print("usermodule.py not found")
@@ -27,7 +27,7 @@ class Context:
         self.env = env
 
     def update_last_execution_time(self):
-        tmp = os.path.getmtime("/app/usermodule.py")
+        tmp = os.path.getmtime("/serverless-monitoring/usermodule.py")
         self.function_getmtime = datetime.datetime.fromtimestamp(tmp).strftime('%Y-%m-%d %H:%M:%S')
         self.last_execution = datetime.datetime.now()
 
